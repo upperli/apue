@@ -1,0 +1,464 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"test",
+				"testfile2"
+			],
+			[
+				"err",
+				"error"
+			],
+			[
+				"inc",
+				"include"
+			],
+			[
+				"wait",
+				"waitpid"
+			],
+			[
+				"errno",
+				"errnoflag"
+			],
+			[
+				"va_",
+				"va_list"
+			],
+			[
+				"va",
+				"va_start"
+			],
+			[
+				"f",
+				"fmt"
+			],
+			[
+				"ma",
+				"map"
+			]
+		]
+	},
+	"buffers":
+	[
+		{
+			"file": "main.c",
+			"settings":
+			{
+				"buffer_size": 372,
+				"line_ending": "Unix",
+				"name": "#include \"apue.h\""
+			}
+		},
+		{
+			"file": "testshell.sh",
+			"settings":
+			{
+				"buffer_size": 283,
+				"line_ending": "Unix",
+				"name": "#!/usr/bin/bash"
+			}
+		},
+		{
+			"file": "Makefile",
+			"settings":
+			{
+				"buffer_size": 113,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "create.c",
+			"settings":
+			{
+				"buffer_size": 446,
+				"line_ending": "Unix",
+				"name": "#include \"apue.h\""
+			}
+		},
+		{
+			"file": "apue.h",
+			"settings":
+			{
+				"buffer_size": 576,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "main",
+			"settings":
+			{
+				"buffer_size": 20275,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "result.txt",
+			"settings":
+			{
+				"buffer_size": 710,
+				"line_ending": "Unix"
+			}
+		}
+	],
+	"build_system": "Packages/Makefile/Make.sublime-build",
+	"command_palette":
+	{
+		"height": 392.0,
+		"selected_items":
+		[
+		],
+		"width": 392.0
+	},
+	"console":
+	{
+		"height": 0.0
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"file_history":
+	[
+		"/home/lichunyao/docs/apue/capter_3/IOxiaolv/testfile",
+		"/home/lichunyao/docs/apue/createproject.sh",
+		"/home/lichunyao/docs/apue/capter_3/holefile/holefile.sublime-workspace",
+		"/opt/sublime_text_2/sublime.sh",
+		"/home/lichunyao/docs/apue/capter_3/holefile/Makefile",
+		"/home/lichunyao/docs/apue/capter_3/holefile/apue.h",
+		"/home/lichunyao/docs/apue/capter_3/holefile/main.c",
+		"/*",
+		"/opt/Sublime Text 2/sublime.sh",
+		"/home/lichunyao/.config/sublime-text-2/Packages/User/C.sublime-settings",
+		"/home/lichunyao/docs/apue/capter_1/test.c",
+		"/home/lichunyao/docs/apue/capter_1/signal/main.c",
+		"/home/lichunyao/docs/apue/capter_1/signal/Makefile",
+		"/home/lichunyao/docs/apue/capter_1/apue_err.c",
+		"/home/lichunyao/docs/apue/capter_1/makefile",
+		"/home/lichunyao/docs/apue/capter_1/apue.h",
+		"/home/lichunyao/docs/tulun/sousuo/oil.c",
+		"/home/lichunyao/docs/tulun/jichu/frogs neighborhood.c",
+		"/home/lichunyao/docs/python/mypython/script1.py",
+		"/home/lichunyao/docs/python/mypython/untitled.py",
+		"/home/lichunyao/docs/c++prime/SNLComplier/fllow",
+		"/home/lichunyao/docs/c++prime/SNLComplier/first:",
+		"/home/lichunyao/docs/c++prime/SNLComplier/predict.txt",
+		"/home/lichunyao/docs/c++prime/SNLComplier/test.snl",
+		"/home/lichunyao/docs/c++prime/SNLComplier/test1.snl",
+		"/home/lichunyao/github/MYOS/boot/boot.s"
+	],
+	"find":
+	{
+		"height": 35.0
+	},
+	"find_in_files":
+	{
+		"height": 0.0,
+		"where_history":
+		[
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+			"\\t",
+			" ",
+			"  ",
+			"   ",
+			"    ",
+			"\\t",
+			"ENDIF",
+			"#ELSE",
+			"IFDEF",
+			"c",
+			"#"
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+			"	",
+			"\\t",
+			" ",
+			"  ",
+			" ",
+			"endif",
+			"#else",
+			"ifdef"
+		],
+		"reverse": false,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"selected": 6,
+			"sheets":
+			[
+				{
+					"buffer": 0,
+					"file": "main.c",
+					"settings":
+					{
+						"buffer_size": 372,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								69,
+								69
+							]
+						],
+						"settings":
+						{
+							"auto_name": "#include \"apue.h\"",
+							"syntax": "Packages/C++/C.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"file": "testshell.sh",
+					"settings":
+					{
+						"buffer_size": 283,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								283,
+								283
+							]
+						],
+						"settings":
+						{
+							"auto_name": "#!/usr/bin/bash",
+							"syntax": "Packages/ShellScript/Shell-Unix-Generic.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "Makefile",
+					"settings":
+					{
+						"buffer_size": 113,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								113,
+								113
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Makefile/Makefile.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"file": "create.c",
+					"settings":
+					{
+						"buffer_size": 446,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								317,
+								317
+							]
+						],
+						"settings":
+						{
+							"auto_name": "#include \"apue.h\"",
+							"syntax": "Packages/C++/C.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 4,
+					"file": "apue.h",
+					"settings":
+					{
+						"buffer_size": 576,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 5,
+					"file": "main",
+					"settings":
+					{
+						"buffer_size": 20275,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Text/Plain text.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 6,
+					"file": "result.txt",
+					"settings":
+					{
+						"buffer_size": 710,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								58,
+								710
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Text/Plain text.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				}
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 0.0
+	},
+	"input":
+	{
+		"height": 0.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.exec":
+	{
+		"height": 169.0
+	},
+	"replace":
+	{
+		"height": 64.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 500.0,
+		"selected_items":
+		[
+		],
+		"width": 380.0
+	},
+	"show_minimap": true,
+	"show_open_files": false,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 150.0,
+	"status_bar_visible": true
+}
