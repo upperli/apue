@@ -20,8 +20,30 @@
 void err_ret(const char * fmt,...);
 void err_sys(const char * fmt,...);
 void err_exit(int error,const char * fmt,...);
-void err_dump(const char * fmt,...);
+void err_dump(const char * fmt,...);//dump core and terminal,会产生core文件 一般用于更严重错误
 void err_msg(const char * fmt,...);
 void err_quit(const char * fmt,...);
+
+
+
+//记录锁
+int reg(int fd, int cmd, int type, off_t offset, int whence, off_t len);
+//读锁
+#define 	read_lock(fd,offset,whence,len)	\
+			lock_reg((fd), F_SETLK, F_RDLCK, (offset), (whence), (len))
+//读锁阻塞版本
+#define 	readw_lock(fd,offset,whence,len)	\
+			lock_reg((fd), F_SETLKW, F_RDLCK, (offset), (whence), (len))
+//写锁
+#define 	write_lock(fd,offset,whence,len)	\
+			lock_reg((fd), F_SETLK, F_WRLCK, (offset), (whence), (len))
+//写锁阻塞版本
+#define 	writew_lock(fd,offset,whence,len)	\
+			lock_reg((fd), F_SETLKW, F_RDLCK, (offset), (whence), (len))
+//解锁
+#define 	un_lock(fd,offset,whence,len)	\
+			lock_reg((fd), F_SETLK, F_UNLCK, (offset), (whence), (len))
+
+
 
 #endif

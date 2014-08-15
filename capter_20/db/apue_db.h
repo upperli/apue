@@ -5,9 +5,9 @@ typedef 	void * 	DBHANDLE;
 
 //函数接口声明
 DBHANDLE db_open(const char * pathname,int oflag,...);
-void  	 db_close(DBHANDLE db);
-char 	*db_fetch(DBHANDLE db,const char *);
-int 		 db_store(DBHANDLE db,const char * ,const char * ,int);
+void	 db_close(DBHANDLE db);
+char 	*db_fetch(DBHANDLE db,const char * key);
+int 		 db_store(DBHANDLE db,const char * key,const char * ,int);
 int 		 db_delete(DBHANDLE db,const char *);
 int 		 db_rewind(DBHANDLE db);
 char 	*db_nextrec(DBHANDLE db,char *);

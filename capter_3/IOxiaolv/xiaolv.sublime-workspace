@@ -44,61 +44,13 @@
 	"buffers":
 	[
 		{
-			"file": "main.c",
+			"contents": "",
+			"file": "/home/lichunyao/docs/apue/capter_20/db/apue_db.h",
+			"file_size": -1,
+			"file_write_time": -1,
 			"settings":
 			{
-				"buffer_size": 372,
-				"line_ending": "Unix",
-				"name": "#include \"apue.h\""
-			}
-		},
-		{
-			"file": "testshell.sh",
-			"settings":
-			{
-				"buffer_size": 283,
-				"line_ending": "Unix",
-				"name": "#!/usr/bin/bash"
-			}
-		},
-		{
-			"file": "Makefile",
-			"settings":
-			{
-				"buffer_size": 113,
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "create.c",
-			"settings":
-			{
-				"buffer_size": 446,
-				"line_ending": "Unix",
-				"name": "#include \"apue.h\""
-			}
-		},
-		{
-			"file": "apue.h",
-			"settings":
-			{
-				"buffer_size": 576,
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "main",
-			"settings":
-			{
-				"buffer_size": 20275,
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "result.txt",
-			"settings":
-			{
-				"buffer_size": 710,
+				"buffer_size": 0,
 				"line_ending": "Unix"
 			}
 		}
@@ -127,6 +79,13 @@
 	},
 	"file_history":
 	[
+		"/home/lichunyao/docs/apue/capter_3/IOxiaolv/result.txt",
+		"/home/lichunyao/docs/apue/capter_3/IOxiaolv/main",
+		"/home/lichunyao/docs/apue/capter_3/IOxiaolv/apue.h",
+		"/home/lichunyao/docs/apue/capter_3/IOxiaolv/create.c",
+		"/home/lichunyao/docs/apue/capter_3/IOxiaolv/Makefile",
+		"/home/lichunyao/docs/apue/capter_3/IOxiaolv/testshell.sh",
+		"/home/lichunyao/docs/apue/capter_3/IOxiaolv/main.c",
 		"/home/lichunyao/docs/apue/capter_3/IOxiaolv/testfile",
 		"/home/lichunyao/docs/apue/createproject.sh",
 		"/home/lichunyao/docs/apue/capter_3/holefile/holefile.sublime-workspace",
@@ -206,124 +165,15 @@
 	"groups":
 	[
 		{
-			"selected": 6,
+			"selected": 0,
 			"sheets":
 			[
 				{
 					"buffer": 0,
-					"file": "main.c",
+					"file": "/home/lichunyao/docs/apue/capter_20/db/apue_db.h",
 					"settings":
 					{
-						"buffer_size": 372,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								69,
-								69
-							]
-						],
-						"settings":
-						{
-							"auto_name": "#include \"apue.h\"",
-							"syntax": "Packages/C++/C.tmLanguage",
-							"translate_tabs_to_spaces": false
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"type": "text"
-				},
-				{
-					"buffer": 1,
-					"file": "testshell.sh",
-					"settings":
-					{
-						"buffer_size": 283,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								283,
-								283
-							]
-						],
-						"settings":
-						{
-							"auto_name": "#!/usr/bin/bash",
-							"syntax": "Packages/ShellScript/Shell-Unix-Generic.tmLanguage"
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"type": "text"
-				},
-				{
-					"buffer": 2,
-					"file": "Makefile",
-					"settings":
-					{
-						"buffer_size": 113,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								113,
-								113
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Makefile/Makefile.tmLanguage"
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"type": "text"
-				},
-				{
-					"buffer": 3,
-					"file": "create.c",
-					"settings":
-					{
-						"buffer_size": 446,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								317,
-								317
-							]
-						],
-						"settings":
-						{
-							"auto_name": "#include \"apue.h\"",
-							"syntax": "Packages/C++/C.tmLanguage",
-							"translate_tabs_to_spaces": false
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"type": "text"
-				},
-				{
-					"buffer": 4,
-					"file": "apue.h",
-					"settings":
-					{
-						"buffer_size": 576,
+						"buffer_size": 0,
 						"regions":
 						{
 						},
@@ -337,58 +187,6 @@
 						"settings":
 						{
 							"syntax": "Packages/C++/C++.tmLanguage"
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"type": "text"
-				},
-				{
-					"buffer": 5,
-					"file": "main",
-					"settings":
-					{
-						"buffer_size": 20275,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								0,
-								0
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Text/Plain text.tmLanguage"
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"type": "text"
-				},
-				{
-					"buffer": 6,
-					"file": "result.txt",
-					"settings":
-					{
-						"buffer_size": 710,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								58,
-								710
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Text/Plain text.tmLanguage"
 						},
 						"translation.x": 0.0,
 						"translation.y": 0.0,
