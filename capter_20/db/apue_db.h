@@ -9,7 +9,7 @@ void	 db_close(DBHANDLE db);
 char 	*db_fetch(DBHANDLE db,const char * key);
 int 		 db_store(DBHANDLE db,const char * key,const char * ,int);
 int 		 db_delete(DBHANDLE db,const char *);
-int 		 db_rewind(DBHANDLE db);
+void 	 db_rewind(DBHANDLE db);
 char 	*db_nextrec(DBHANDLE db,char *);
 
 //flags for db_store

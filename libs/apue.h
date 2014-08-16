@@ -27,7 +27,8 @@ void err_quit(const char * fmt,...);
 
 
 //记录锁
-int reg(int fd, int cmd, int type, off_t offset, int whence, off_t len);
+int lock_reg(int fd, int cmd, int type, off_t offset, int whence, off_t len);
+
 //读锁
 #define 	read_lock(fd,offset,whence,len)	\
 			lock_reg((fd), F_SETLK, F_RDLCK, (offset), (whence), (len))
