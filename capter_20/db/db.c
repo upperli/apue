@@ -16,6 +16,7 @@
 #define	PTR_MAX 		999999	//最大文件偏移量为 10^PTR_SZ-1
 #define	NHASH_DEF	137 		//默认哈希表大小
 #define 	HASH_OFF		PTR_SZ 	//索引文件中哈希表的偏移量
+#define 	FREE_OFF 	0
 
 
 typedef	unsigned long DBHASH;
@@ -75,6 +76,12 @@ static	DBHASH 	 _db_hash(DB *db, const char *key);
 static	off_t 	 _db_readptr(DB *db, off_t offset/*哈希表上的位置*/);
 static 	off_t	 _db_readidx(DB *db, off_t offset/*索引记录的偏移量*/);
 static 	char 	*_db_readdat(DB * db);	//读取数据
+static 	int 		 _db_findfree(DB *db, int keylen, int datlen);
+static	void 	 _db_writeptr(DB *db, off_t offset, off_t ptrval);
+static 	void 	 _db_writedat(DB *db, const char *data, off_t offset, int whence);
+
+static 	void 	 _db_writeidx(DB *db, const char *key, off_t offset, int whence, off_t ptrval);
+static 	void 	 _db_dodelete(DB *db);
 
 //打开或者创建一个数据库，参数和open系统调用一样
 DBHANDLE	db_open(const char * pathname , int oflag , ...)
@@ -254,7 +261,12 @@ char * db_fetch(DBHANDLE	h, const char * key)
 	return ptr;
 }
 
-//加锁查找
+/*
+* 	加锁查找
+*	chainoff更新成这个关键字所在哈希表位置 hash（key)
+*	ptroff 	是记录地址
+* 	返回值表示是否找到，0表示找到，-1表示找不到
+*/
 static int _db_find_and_lock(DB *db, const char *key, int writelock)
 {
 	off_t	offset, nextoffset;
@@ -424,31 +436,38 @@ int 	db_store(DBHANDLE h, const char * key, const char *data, int flag)
 	keylen = strlen(key);
 	datlen = strlen(data) + 1;
 
-	if(datalen < DATLEN_MIN || datalen > DATLEN_MAX)
+	if(datlen < DATLEN_MIN || datlen > DATLEN_MAX)
 		err_dump("db_store: invalid data length");
 
-	if(_db_find_and_lock(db, key, 1) < 0)
-	{
+	if(_db_find_and_lock(db, key, 1) < 0)//加了写锁
+	{							
+		/*
+		*	如果数据库里没有这个关键字
+		* 	可以用DB_INSERT和DB_STOR但是DB_REPLACE不合法
+		*/
 		if(flag == DB_REPLACE)
 		{
+			//因为不存在，所以替换不合法
 			rc = -1;
 			++db->cnt_storerr;
 			errno = ENOENT;
 			goto doreturn;
 		}
 
-
+		//因为没有找到，索引ptroff的值无意义
 		ptrval = _db_readptr(db, db->chainoff);
+		//ptrval 是链表的偏移
 
-		if(_db_findfree(db, keylen, datalen) < 0)
+
+		if(_db_findfree(db, keylen, datlen) < 0)
 		{
 			_db_writedat(db, data, 0, SEEK_END);
-			_db_writeidx(dbm key, 0, SEEK_END, ptrval);
+			_db_writeidx(db, key, 0, SEEK_END, ptrval);
 			_db_writeptr(db, db->chainoff, db->idxoff);
 			++db->cnt_stor1;
 		}else{
 			_db_writedat(db, data, db->datoff, SEEK_SET);
-			_db_writeidx(db, key, db->idxoff, SEEK_SET);
+			_db_writeidx(db, key, db->idxoff, SEEK_SET,ptrval);
 			_db_writeptr(db, db->chainoff, db->idxoff);
 			++db->cnt_stor2;
 		}
@@ -465,13 +484,13 @@ int 	db_store(DBHANDLE h, const char * key, const char *data, int flag)
 			_db_dodelete(db);
 			ptrval = _db_readptr(db, db->chainoff);
 			_db_writedat(db, data, 0, SEEK_END);
-			_db_writeidx(dbm key, 0, SEEK_END, ptrval);
+			_db_writeidx(db, key, 0, SEEK_END, ptrval);
 			_db_writeptr(db, db->chainoff, db->idxoff);
 
 			++db->cnt_stor3;
 
 		}else{
-			_db_writedat(db, data, db->ddatoff,SEEK_SET);
+			_db_writedat(db, data, db->datoff,SEEK_SET);
 			++db->cnt_stor4;
 		}
 	}
@@ -481,4 +500,135 @@ doreturn:
 	if(un_lock(db->idxfd, db->chainoff, SEEK_SET, 1) < 0)
 		err_dump("db_store: un_lock error");
 	return rc;
+}
+
+//找空闲位置
+static int _db_findfree(DB *db, int keylen, int datlen)
+{
+	int rc;
+	off_t offset, nextoffset, saveoffset;
+
+	if(writew_lock(db->idxfd, FREE_OFF, SEEK_SET, 1) < 0)//加写锁
+		err_dump("_db_findfree: writew_lock error");
+	
+	saveoffset = FREE_OFF;//FREE_OFF 就是空闲地址指针的位置
+
+	offset = _db_readptr(db, saveoffset);//offset是空闲地址指针
+
+//最佳适配原则找位置,结果保存在offset中，saveoffset是前一个地址
+	while(offset != 0)
+	{
+		nextoffset = _db_readptr(db, offset);//空闲地址上读取下一个空闲地址的指针
+		if(strlen(db->idxbuf) == keylen && db->datlen == datlen)//关键字长度和数据长度是否匹配
+			break;
+
+		saveoffset = offset;
+		offset = nextoffset;
+	}
+
+
+	if(offset == 0)
+	{
+		rc = -1;
+	}else{
+		_db_writeptr(db, saveoffset, db->ptrval);//在将offset从链表中除掉
+		rc = 0;
+	}
+
+	if(un_lock(db->idxfd, FREE_OFF, SEEK_SET, 1) < 0)//解锁
+		err_dump("_db_findfree： un_lock error");
+
+	return rc;
+
+}
+
+//将数据写入索引记录的指针域
+static void _db_writeptr(DB *db, off_t offset, off_t ptrval)
+{
+	char asciiptr[PTR_SZ + 1];
+
+	if(ptrval < 0 || ptrval > PTR_MAX)
+		err_quit("_db_writeptr: invalid ptr: %d", ptrval);//指针不合法，退出
+	
+	sprintf(asciiptr, "%*ld", PTR_SZ, ptrval);
+ 
+	if(lseek(db->idxfd, offset, SEEK_SET) == -1)
+		err_dump("_db_writeptr: lseek error to ptr field");
+	if(write(db->idxfd, asciiptr, PTR_SZ) != PTR_SZ)
+		err_dump("_db_writeptr: write error of ptr field");
+}
+
+
+/*
+*	加锁部分有疑问，为何往非结尾部分写不用加锁？因为不能被访问到？
+* 	对文件加锁不影响其他用户读，因为读是在索引记录上加锁，其他用户写记录的时候，如果不是往文件末尾添加也不会有冲突，
+* 	但是同时的话会有冲突，因为lseek与write之间不是原子操作，必须要加锁，以后尝试用pwrite试试，貌似有pwritev操作
+*/
+static void _db_writedat(DB *db, const char *data, off_t offset, int whence)
+{
+	struct iovec		iov[2];
+
+	static char newline = NEWLINE;
+
+	if(whence == SEEK_END)//如果往最后追加时，加锁，否则不用加锁，
+		if(writew_lock(db->datfd, 0, SEEK_SET, 0) < 0)//锁住整个文件
+			err_dump("_db_writedat: writew_lock error");
+
+	if((db->datoff = lseek(db->datfd, offset, whence)) == -1)
+		err_dump("_db_writedat: lseek error");
+	db->datlen = strlen(data) + 1;
+
+	iov[0].iov_base = (char *) data;
+	iov[0].iov_len = db->datlen - 1;
+	iov[1].iov_base = &newline;
+	iov[1].iov_len = 1;
+
+	if(writev(db->datfd, &iov[0], 2) != db->datlen)
+		err_dump("_db_writedat: writev error of data record");
+
+	if(whence == SEEK_END)
+		if(un_lock(db->datfd, 0, SEEK_SET, 0) < 0)
+			err_dump("_db_writedat： un_lock error");
+}
+
+
+static void _db_writeidx(DB *db, const char *key, off_t offset, int whence, off_t ptrval)
+{
+	struct iovec 	iov[2];
+	char 	asciiptr[PTR_SZ + IDXLEN_SZ + 1];
+	int len;
+	char 	*fmt;
+	if((db->ptrval = ptrval) < 0 || ptrval > PTR_MAX)
+		err_quit("_db_writeidx: invalid ptr: %d", ptrval);
+	if(sizeof(off_t) == sizeof(long long))
+		fmt = "%s%c%lld%c%d\n";
+	else
+		fmt = "%s%c%ld%c%d\n";
+	sprintf(db->idxbuf, fmt, key, SEP, db->datoff, SEP, db->datlen);
+
+	if((len = strlen(db->idxbuf)) < IDXLEN_MIN || len > IDXLEN_MAX)
+		err_dump("_db_writeidx: invalid length");
+	sprintf(asciiptr, "%*ld%*d", PTR_SZ, ptrval, IDXLEN_SZ, len);
+
+	if(whence == SEEK_END)
+		if(writew_lock(db->idxfd, ((db->nhash + 1)*PTR_SZ) + 1, SEEK_SET, 0) < 0)
+			err_dump("_db_writeidx: writew_lock error");
+	if((db->idxoff = lseek(db->idxfd, offset, whence)) == -1)
+		err_dump("_db_writeidx: lseek error");
+	iov[0].iov_base = asciiptr;
+	iov[0].iov_len = PTR_SZ + IDXLEN_SZ;
+	iov[1].iov_base = db->idxbuf;
+	iov[1].iov_len = len;
+
+	if(writev(db->idxfd, &iov[0], 2) != PTR_SZ + IDXLEN_SZ + len)
+		err_dump("_db_writeidx: writev error");
+
+	if(whence == SEEK_END)
+		if(un_lock(db->idxfd, ((db->nhash + 1)*PTR_SZ) + 1, SEEK_SET, 0) < 0)
+			err_dump("_db_writeidx: writew_lock error");
+}
+
+static 	void 	 _db_dodelete(DB *db)
+{
+	
 }

@@ -22,7 +22,7 @@ void err_sys(const char * fmt,...);
 void err_exit(int error,const char * fmt,...);
 void err_dump(const char * fmt,...);//dump core and terminal,会产生core文件 一般用于更严重错误
 void err_msg(const char * fmt,...);
-void err_quit(const char * fmt,...);
+void err_quit(const char * fmt,...);//当errno无错误信息时使用，用于用户错误
 
 
 
