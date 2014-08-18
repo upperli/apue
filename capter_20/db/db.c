@@ -39,7 +39,7 @@ typedef struct {
 	DBHASH	nhash;	//当前散列表大小
 
 	off_t	chainoff;//链表的位置
-	off_t 	ptroff;//当前指向的链表项
+	off_t 	ptroff;//上条记录位置
 
 	off_t 	ptrval;//下一条索引记录偏移量
 	off_t	idxlen;//索引记录长度
@@ -264,7 +264,7 @@ char * db_fetch(DBHANDLE	h, const char * key)
 /*
 * 	加锁查找
 *	chainoff更新成这个关键字所在哈希表位置 hash（key)
-*	ptroff 	是记录地址
+*	ptroff 是记录地址的位置
 * 	返回值表示是否找到，0表示找到，-1表示找不到
 */
 static int _db_find_and_lock(DB *db, const char *key, int writelock)
@@ -290,7 +290,7 @@ static int _db_find_and_lock(DB *db, const char *key, int writelock)
 		nextoffset = _db_readidx(db, offset);//读索引文件，获取下一条记录位置，idxbuf结构： 关键字 null 数据偏移 null 数据长度null
 		if(strcmp(db->idxbuf, key) == 0)
 			break;	//找到关键字匹配
-		db->ptroff = offset;//ptroff是当前地址
+		db->ptroff = offset;//ptroff是上一条地址，储存当前记录指针的位置
 		offset = nextoffset;
 	}
 
@@ -316,7 +316,7 @@ static	DBHASH _db_hash(DB *db, const char *key)
 	return (hval % db->nhash);
 }
 
-//读取链表地址
+//读取链表地址，不修改db
 static off_t _db_readptr(DB *db, off_t offset)
 {
 	char asciiptr[PTR_SZ + 1];
@@ -346,11 +346,12 @@ static off_t	_db_readidx(DB *db, off_t offset)
 	struct iovec		iov[2];
 
 
+
 	if((db->idxoff = lseek(db->idxfd, offset, offset == 0 ? SEEK_CUR : SEEK_SET)) == -1)
 		err_dump("_db_readidx: lseek error");
 
 
-//散布读操作，这样就能一次读两块内容
+	//散布读操作，这样就能一次读两块内容
 	iov[0].iov_base = asciiptr;//获取下一条记录指针
 	iov[0].iov_len = PTR_SZ;
 	iov[1].iov_base = asciilen;//记录长度
@@ -369,19 +370,19 @@ static off_t	_db_readidx(DB *db, off_t offset)
 	asciilen[IDXLEN_SZ] = 0;
 
 	if((db->idxlen = atoi(asciilen)) < IDXLEN_MIN || db->idxlen > IDXLEN_MAX)
-		err_dump("_db_readidx: invalid length");//记录长度错误
+		err_quit("_db_readidx: invalid length");//记录长度错误
 
 	if ((i = read(db->idxfd, db->idxbuf, db->idxlen)) != db->idxlen)
 		err_dump("_db_readidx: read error of index record");
 
 	if(db->idxbuf[db->idxlen -1] != NEWLINE)
-		err_dump("_db_readidx: missing newline");
+		err_quit("_db_readidx: missing newline");
 
 	db->idxbuf[db->idxlen -1] = 0;
 
 
 	if((ptr1 = strchr(db->idxbuf, SEP)) == NULL)
-		err_dump("_db_readidx: missing first separator");
+		err_quit("_db_readidx: missing first separator");
 	*ptr1++ = 0;//将分隔符换成了null，这样字符串idxbuf就是关键字
 	/*
 	* *ptr1 = 0;
@@ -389,19 +390,18 @@ static off_t	_db_readidx(DB *db, off_t offset)
 	*/
 
 	if((ptr2 = strchr(ptr1 , SEP)) == NULL)
-		err_dump("_db_readidx: missing second separator");
+		err_quit("_db_readidx: missing second separator");
 	*ptr2++ = 0;
 
 	if(strchr(ptr2 , SEP) != NULL)
-		err_dump("_db_readidx: too many separators");
+		err_quit("_db_readidx: too many separators");
 
 	if((db->datoff = atol(ptr1)) < 0)//第一个分隔符后是数据偏移
-		err_dump("_db_readidx: starting offset < 0");
+		err_quit("_db_readidx: starting offset < 0");
 	if((db->datlen = atol(ptr2)) <= 0 || db->datlen > DATLEN_MAX)//第二个分割符后是记录长度
-		err_dump("_db_readidx: data record invalid length");
+		err_quit("_db_readidx: data record invalid length");
 
 	return db->ptrval;//返回的是下一条记录偏移
-
 }
 
 
@@ -459,28 +459,33 @@ int 	db_store(DBHANDLE h, const char * key, const char *data, int flag)
 		//ptrval 是链表的偏移
 
 
-		if(_db_findfree(db, keylen, datlen) < 0)
+		if(_db_findfree(db, keylen, datlen) < 0)//使用最佳适配原则找空间，指其他记录删除释放的空间
 		{
+			//没有找到，记录写到文件结尾
 			_db_writedat(db, data, 0, SEEK_END);
 			_db_writeidx(db, key, 0, SEEK_END, ptrval);
 			_db_writeptr(db, db->chainoff, db->idxoff);
 			++db->cnt_stor1;
+
 		}else{
+			//找到了 写道相应位置
 			_db_writedat(db, data, db->datoff, SEEK_SET);
 			_db_writeidx(db, key, db->idxoff, SEEK_SET,ptrval);
 			_db_writeptr(db, db->chainoff, db->idxoff);
 			++db->cnt_stor2;
 		}
-	}else{
-		if(flag == DB_INSERT)
+	}else{//数据库里存在这个关键字
+
+		if(flag == DB_INSERT)//不能插入，只能替换
 		{
 			rc = 1;
 			++db->cnt_storerr;
 			goto doreturn;
 		}
 
-		if(datlen != db->datlen)
+		if(datlen != db->datlen)//判断数据长度是否相等
 		{
+			//不相等，要删除原先的记录
 			_db_dodelete(db);
 			ptrval = _db_readptr(db, db->chainoff);
 			_db_writedat(db, data, 0, SEEK_END);
@@ -490,6 +495,7 @@ int 	db_store(DBHANDLE h, const char * key, const char *data, int flag)
 			++db->cnt_stor3;
 
 		}else{
+			//相等的情况，直接改数据文件
 			_db_writedat(db, data, db->datoff,SEEK_SET);
 			++db->cnt_stor4;
 		}
@@ -515,7 +521,7 @@ static int _db_findfree(DB *db, int keylen, int datlen)
 
 	offset = _db_readptr(db, saveoffset);//offset是空闲地址指针
 
-//最佳适配原则找位置,结果保存在offset中，saveoffset是前一个地址
+	//最佳适配原则找位置,结果保存在offset中，saveoffset是前一个地址
 	while(offset != 0)
 	{
 		nextoffset = _db_readptr(db, offset);//空闲地址上读取下一个空闲地址的指针
@@ -542,7 +548,7 @@ static int _db_findfree(DB *db, int keylen, int datlen)
 
 }
 
-//将数据写入索引记录的指针域
+//将数据写入索引记录的指针域，将parval写到offset位置
 static void _db_writeptr(DB *db, off_t offset, off_t ptrval)
 {
 	char asciiptr[PTR_SZ + 1];
@@ -591,7 +597,9 @@ static void _db_writedat(DB *db, const char *data, off_t offset, int whence)
 			err_dump("_db_writedat： un_lock error");
 }
 
-
+/*
+*   需要db提供正确的数据地址偏移，正确的数据空间长度
+*/
 static void _db_writeidx(DB *db, const char *key, off_t offset, int whence, off_t ptrval)
 {
 	struct iovec 	iov[2];
@@ -600,19 +608,25 @@ static void _db_writeidx(DB *db, const char *key, off_t offset, int whence, off_
 	char 	*fmt;
 	if((db->ptrval = ptrval) < 0 || ptrval > PTR_MAX)
 		err_quit("_db_writeidx: invalid ptr: %d", ptrval);
+	
+	//生成记录
 	if(sizeof(off_t) == sizeof(long long))
 		fmt = "%s%c%lld%c%d\n";
 	else
 		fmt = "%s%c%ld%c%d\n";
 	sprintf(db->idxbuf, fmt, key, SEP, db->datoff, SEP, db->datlen);
 
+	//计算长度
 	if((len = strlen(db->idxbuf)) < IDXLEN_MIN || len > IDXLEN_MAX)
-		err_dump("_db_writeidx: invalid length");
+		err_quit("_db_writeidx: invalid length");
 	sprintf(asciiptr, "%*ld%*d", PTR_SZ, ptrval, IDXLEN_SZ, len);
 
-	if(whence == SEEK_END)
+	if(whence == SEEK_END)//加锁，原因见_db_writedat
 		if(writew_lock(db->idxfd, ((db->nhash + 1)*PTR_SZ) + 1, SEEK_SET, 0) < 0)
 			err_dump("_db_writeidx: writew_lock error");
+
+
+
 	if((db->idxoff = lseek(db->idxfd, offset, whence)) == -1)
 		err_dump("_db_writeidx: lseek error");
 	iov[0].iov_base = asciiptr;
@@ -628,7 +642,88 @@ static void _db_writeidx(DB *db, const char *key, off_t offset, int whence, off_
 			err_dump("_db_writeidx: writew_lock error");
 }
 
-static 	void 	 _db_dodelete(DB *db)
+/*
+*	db: datoff是要删除数据的地址，idxoff是当前记录的偏移，idxbuf是索引记录中间用null间隔，ptrval是下一条索引记录的偏移
+*/
+static void  _db_dodelete(DB *db)
 {
+	int i;
+	char *ptr;
+	off_t freeptr, saveptr;
+
+	for(ptr = db->datbuf, i = 0; i < db->datlen - 1; ++i)
+		*ptr++ = SPACE;
+	*ptr = 0;
+	ptr = db->idxbuf;
+	while(*ptr)
+		*ptr++ = SPACE;
+
+	if(writew_lock(db->idxfd, FREE_OFF, SEEK_SET, 1) < 0)
+		err_dump("_db_dodelete: writew_lock error");
+
+	_db_writedat(db, db->datbuf, db->datoff, SEEK_SET);//将数据部分全部写成空格
+
+	freeptr = _db_readptr(db, FREE_OFF);//freeptr是空闲地址链表位置
+	saveptr = db->ptrval;//保存链表指针
+
+	/*
+	*当前记录改成：freeptr，idxlen，原先key长度的空格，：，数据偏移，：数据长度，\n
+	*/
+	_db_writeidx(db, db->idxbuf, db->idxoff, SEEK_SET, freeptr);
+
+	_db_writeptr(db, FREE_OFF, db->idxoff);//将该记录假如空闲链表
 	
+	_db_writeptr(db, db->ptroff, saveptr);//上条记录接上下条记录
+
+
+
+	if(un_lock(db->idxfd, FREE_OFF, SEEK_SET, 1) < 0)
+		err_dump("_db_dodelete: un_lock error");
+}
+
+
+//删除记录
+int db_delete(DBHANDLE h, const char *key)
+{
+	DB *db = h;
+	int rc = 0;
+	if(_db_find_and_lock(db, key, 1) == 0)
+	{
+		_db_dodelete(db);
+		++db->cnt_delok;
+	}else{
+		rc = -1;
+		++db->cnt_delerr;
+	}
+
+	if(un_lock(db->idxfd, db->chainoff, SEEK_SET, 1) < 0)
+		err_dump("db_delete: unlock error");
+	return rc;
+}
+//下一条记录
+char * db_nextrec(DBHANDLE h, char *key)
+{
+	DB *db = h;
+	char c;
+	char *ptr;
+	if(readw_lock(db->idxfd, FREE_OFF, SEEK_SET, 1) < 0)
+		err_dump("db_nextrec: readw_lock error");
+	do{
+		if(_db_readidx(db, 0) < 0)
+		{
+			ptr = NULL;
+			goto doreturn;
+		}
+		ptr = db->idxbuf;
+		while((c = *ptr++) != 0 && c == SPACE);//可否改成while(*ptr++ == SPACE);
+	}while(c == 0);
+
+	if(key != NULL)
+		strcpy(key, db->idxbuf);
+	ptr = _db_readdat(db);
+	++db->cnt_nextrec;
+doreturn:
+	if(un_lock(db->idxfd, FREE_OFF, SEEK_SET, 1) < 0)
+		err_dump("db_nextrec: un_lock error");
+	return ptr;
 }
