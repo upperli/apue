@@ -47,10 +47,10 @@ typedef struct {
 /*
 * 	数据文件相关
 */
-	int datfd;		//数据文件的fd
-	char *datbuf;	//数据文件缓存
-	off_t 	datoff;	//数据文件记录的偏移量
-	off_t 	datlen; //数据长度
+	int 		datfd;		//数据文件的fd
+	char      *datbuf;	//数据文件缓存
+	off_t 	 datoff;	//数据文件记录的偏移量
+	off_t 	 datlen; //数据长度
 
 /*
  *	关于数据库操作的统计计数	
@@ -69,8 +69,8 @@ typedef struct {
 
 //内部隐藏函数
 static	DB 		*_db_alloc(int);
-static 	void 	 _db_dodelete(DB *);
-static 	void 	 _db_free(DB *);
+static 	void 	 _db_dodelete(DB *db);
+static 	void 	 _db_free(DB *db);
 static	int 		 _db_find_and_lock(DB *db, const char *key/*关键字*/, int writelock/*非0是写锁，0是读锁*/);
 static	DBHASH 	 _db_hash(DB *db, const char *key);
 static	off_t 	 _db_readptr(DB *db, off_t offset/*哈希表上的位置*/);
@@ -79,7 +79,6 @@ static 	char 	*_db_readdat(DB * db);	//读取数据
 static 	int 		 _db_findfree(DB *db, int keylen, int datlen);
 static	void 	 _db_writeptr(DB *db, off_t offset, off_t ptrval);
 static 	void 	 _db_writedat(DB *db, const char *data, off_t offset, int whence);
-
 static 	void 	 _db_writeidx(DB *db, const char *key, off_t offset, int whence, off_t ptrval);
 static 	void 	 _db_dodelete(DB *db);
 
@@ -437,7 +436,7 @@ int 	db_store(DBHANDLE h, const char * key, const char *data, int flag)
 	datlen = strlen(data) + 1;
 
 	if(datlen < DATLEN_MIN || datlen > DATLEN_MAX)
-		err_dump("db_store: invalid data length");
+		err_quit("db_store: invalid data length");//这里没有系统错误，感觉用quit比较好
 
 	if(_db_find_and_lock(db, key, 1) < 0)//加了写锁
 	{							
@@ -488,11 +487,29 @@ int 	db_store(DBHANDLE h, const char * key, const char *data, int flag)
 			//不相等，要删除原先的记录
 			_db_dodelete(db);
 			ptrval = _db_readptr(db, db->chainoff);
-			_db_writedat(db, data, 0, SEEK_END);
-			_db_writeidx(db, key, 0, SEEK_END, ptrval);
-			_db_writeptr(db, db->chainoff, db->idxoff);
 
-			++db->cnt_stor3;
+
+
+			if(_db_findfree(db, keylen, datlen) < 0)//使用最佳适配原则找空间，指其他记录删除释放的空间
+			{
+				//没有找到，记录写到文件结尾
+				_db_writedat(db, data, 0, SEEK_END);
+				_db_writeidx(db, key, 0, SEEK_END, ptrval);
+				_db_writeptr(db, db->chainoff, db->idxoff);
+				++db->cnt_stor4;
+
+			}else{
+				//找到了 写道相应位置
+				_db_writedat(db, data, db->datoff, SEEK_SET);
+				_db_writeidx(db, key, db->idxoff, SEEK_SET,ptrval);
+				_db_writeptr(db, db->chainoff, db->idxoff);
+				++db->cnt_stor3;
+			}
+		//	_db_writedat(db, data, 0, SEEK_END);
+		//	_db_writeidx(db, key, 0, SEEK_END, ptrval);
+		//	_db_writeptr(db, db->chainoff, db->idxoff);
+
+		//	++db->cnt_stor3;
 
 		}else{
 			//相等的情况，直接改数据文件
@@ -524,7 +541,7 @@ static int _db_findfree(DB *db, int keylen, int datlen)
 	//最佳适配原则找位置,结果保存在offset中，saveoffset是前一个地址
 	while(offset != 0)
 	{
-		nextoffset = _db_readptr(db, offset);//空闲地址上读取下一个空闲地址的指针
+		nextoffset = _db_readidx(db, offset);//空闲地址上读取下一个空闲地址的指针
 		if(strlen(db->idxbuf) == keylen && db->datlen == datlen)//关键字长度和数据长度是否匹配
 			break;
 
@@ -715,7 +732,8 @@ char * db_nextrec(DBHANDLE h, char *key)
 			goto doreturn;
 		}
 		ptr = db->idxbuf;
-		while((c = *ptr++) != 0 && c == SPACE);//可否改成while(*ptr++ == SPACE);
+		while((c = *ptr++) == SPACE);
+		//while((c = *ptr++) != 0 && c == SPACE);//可否改成while(*ptr++ == SPACE);
 	}while(c == 0);
 
 	if(key != NULL)

@@ -7,7 +7,7 @@ int main()
 	char key[1000],data[1000];
 	char  * result;
 	int mode;
-	if((db = db_open("db", O_RDWR  | O_CREAT  , FILE_MODE)) == NULL)
+	if((db = db_open("db", O_RDWR  | O_CREAT |  O_TRUNC, FILE_MODE)) == NULL)
 		err_sys("db_open error");
 
 	while(1){
@@ -23,7 +23,7 @@ int main()
 				printf("mode:\n");
 				scanf("%d",&mode);
 				if(db_store(db,key,data,mode) != 0)
-					err_quit("db_store error for %s", key);
+					err_msg("db_store error for %s", key);
 				break;
 			case 1:
 				printf("key:\n");
@@ -37,7 +37,7 @@ int main()
 				printf("key:\n");
 				scanf(" %s",key);
 				if(db_delete(db,key) != 0)
-					err_quit("db_store error for %s", key);
+					err_ret("db_store error for %s", key);
 				break;	
 			case 3:
 				db_rewind(db);
