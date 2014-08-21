@@ -12,10 +12,10 @@
 
 
 
-#define PTR_SZ		6		//哈希链表中指针域的大小
-#define	PTR_MAX 		999999	//最大文件偏移量为 10^PTR_SZ-1
-#define	NHASH_DEF	137 		//默认哈希表大小
-#define 	HASH_OFF		PTR_SZ 	//索引文件中哈希表的偏移量
+#define 	PTR_SZ		10				//哈希链表中指针域的大小
+#define	PTR_MAX 		9999999999		//最大文件偏移量为 10^PTR_SZ-1
+#define	NHASH_DEF	137 				//默认哈希表大小
+#define 	HASH_OFF		PTR_SZ 			//索引文件中哈希表的偏移量
 #define 	FREE_OFF 	0
 
 
@@ -284,6 +284,7 @@ static int _db_find_and_lock(DB *db, const char *key, int writelock)
 
 	offset = _db_readptr(db, db->ptroff);//获取链表第一条记录地址
 
+	//printf("_db_find_and_lock:%ld  %s\n", _db_hash(db,key), key);
 	while(offset != 0)
 	{
 		nextoffset = _db_readidx(db, offset);//读索引文件，获取下一条记录位置，idxbuf结构： 关键字 null 数据偏移 null 数据长度null
@@ -369,13 +370,16 @@ static off_t	_db_readidx(DB *db, off_t offset)
 	asciilen[IDXLEN_SZ] = 0;
 
 	if((db->idxlen = atoi(asciilen)) < IDXLEN_MIN || db->idxlen > IDXLEN_MAX)
-		err_quit("_db_readidx: invalid length");//记录长度错误
+		err_dump("_db_readidx: invalid length");//记录长度错误
 
 	if ((i = read(db->idxfd, db->idxbuf, db->idxlen)) != db->idxlen)
 		err_dump("_db_readidx: read error of index record");
 
 	if(db->idxbuf[db->idxlen -1] != NEWLINE)
-		err_quit("_db_readidx: missing newline");
+	{
+		//printf("\n%s\n", db->idxbuf );
+		err_dump("_db_readidx: missing newline");
+	}	
 
 	db->idxbuf[db->idxlen -1] = 0;
 
@@ -438,8 +442,9 @@ int 	db_store(DBHANDLE h, const char * key, const char *data, int flag)
 	if(datlen < DATLEN_MIN || datlen > DATLEN_MAX)
 		err_quit("db_store: invalid data length");//这里没有系统错误，感觉用quit比较好
 
-	if(_db_find_and_lock(db, key, 1) < 0)//加了写锁
-	{							
+	if(_db_find_and_lock(db, key, 1) < 0)//加了写锁 
+	{
+
 		/*
 		*	如果数据库里没有这个关键字
 		* 	可以用DB_INSERT和DB_STOR但是DB_REPLACE不合法
@@ -520,6 +525,7 @@ int 	db_store(DBHANDLE h, const char * key, const char *data, int flag)
 
 	rc = 0;
 doreturn:
+
 	if(un_lock(db->idxfd, db->chainoff, SEEK_SET, 1) < 0)
 		err_dump("db_store: un_lock error");
 	return rc;
@@ -579,6 +585,7 @@ static void _db_writeptr(DB *db, off_t offset, off_t ptrval)
 		err_dump("_db_writeptr: lseek error to ptr field");
 	if(write(db->idxfd, asciiptr, PTR_SZ) != PTR_SZ)
 		err_dump("_db_writeptr: write error of ptr field");
+
 }
 
 
@@ -627,7 +634,7 @@ static void _db_writeidx(DB *db, const char *key, off_t offset, int whence, off_
 		err_quit("_db_writeidx: invalid ptr: %d", ptrval);
 	
 	//生成记录
-	if(sizeof(off_t) == sizeof(long long))
+	if( sizeof(off_t) == sizeof(long long))
 		fmt = "%s%c%lld%c%d\n";
 	else
 		fmt = "%s%c%ld%c%d\n";
@@ -640,17 +647,19 @@ static void _db_writeidx(DB *db, const char *key, off_t offset, int whence, off_
 
 	if(whence == SEEK_END)//加锁，原因见_db_writedat
 		if(writew_lock(db->idxfd, ((db->nhash + 1)*PTR_SZ) + 1, SEEK_SET, 0) < 0)
-			err_dump("_db_writeidx: writew_lock error");
+			err_dump("_db_writeidx: writew_lock error");	
 
 
 
 	if((db->idxoff = lseek(db->idxfd, offset, whence)) == -1)
 		err_dump("_db_writeidx: lseek error");
+
+
 	iov[0].iov_base = asciiptr;
 	iov[0].iov_len = PTR_SZ + IDXLEN_SZ;
 	iov[1].iov_base = db->idxbuf;
 	iov[1].iov_len = len;
-
+	//printf("%d:%s%s\n",db->idxoff,asciiptr,db->idxbuf );
 	if(writev(db->idxfd, &iov[0], 2) != PTR_SZ + IDXLEN_SZ + len)
 		err_dump("_db_writeidx: writev error");
 
